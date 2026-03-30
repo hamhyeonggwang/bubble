@@ -29,78 +29,89 @@
     overflow: hidden;
     height: 100vh;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;   /* 가로 배치 */
     user-select: none;
   }
 
-  /* ── 상단 카드 영역 ── */
-  #top-bar {
-    position: relative;
-    z-index: 20;
-    padding: 16px 24px 12px;
-    background: linear-gradient(180deg, #0e0e0e 80%, transparent);
+  /* ── 왼쪽 사이드바 ── */
+  #sidebar {
+    width: 200px;
+    min-width: 200px;
+    height: 100vh;
+    background: linear-gradient(180deg, #161616 0%, #111111 100%);
+    border-right: 1px solid rgba(255,75,43,0.12);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    padding: 24px 14px 20px;
+    gap: 20px;
+    z-index: 20;
+    position: relative;
   }
 
   .game-label {
-    font-size: 11px;
+    font-size: 9px;
     letter-spacing: 3px;
     color: var(--accent);
     text-transform: uppercase;
     font-weight: 700;
-    opacity: 0.8;
+    opacity: 0.7;
+    text-align: center;
   }
 
+  /* 단어 카드 — 사이드바 안 */
   #word-card {
     background: var(--ivory);
-    border-radius: 20px;
-    padding: 16px 36px;
-    box-shadow: 0 8px 40px rgba(255,75,43,0.25), 0 2px 12px rgba(0,0,0,0.5);
+    border-radius: 18px;
+    padding: 16px 14px;
+    box-shadow: 0 6px 30px rgba(255,75,43,0.2), 0 2px 10px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    min-width: 320px;
-    max-width: 90vw;
+    gap: 12px;
+    width: 100%;
     transition: box-shadow 0.3s;
   }
 
   #word-card.complete {
-    box-shadow: 0 8px 60px rgba(255,215,0,0.5), 0 2px 12px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 50px rgba(255,215,0,0.5), 0 2px 12px rgba(0,0,0,0.5);
     animation: cardPop 0.5s ease;
   }
 
   @keyframes cardPop {
     0% { transform: scale(1); }
-    50% { transform: scale(1.06); }
+    50% { transform: scale(1.04); }
     100% { transform: scale(1); }
   }
 
   #target-word {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 900;
     color: #1a1a1a;
-    letter-spacing: 6px;
+    letter-spacing: 8px;
+    text-align: center;
   }
 
+  /* 자모 슬롯 — 세로 나열 */
   #collect-track {
     display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 6px;
+    justify-content: center;
     align-items: center;
+    width: 100%;
   }
 
   .jamo-slot {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     border: 2px solid #ddd;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 900;
     color: #bbb;
     background: #f0f0f0;
@@ -112,8 +123,8 @@
     background: linear-gradient(135deg, #FF4B2B, #FF8C00);
     border-color: #FF4B2B;
     color: white;
-    transform: scale(1.12);
-    box-shadow: 0 0 14px rgba(255,75,43,0.5);
+    transform: scale(1.1);
+    box-shadow: 0 0 12px rgba(255,75,43,0.5);
     animation: slotPop 0.3s ease;
     opacity: 1;
   }
@@ -124,18 +135,30 @@
     100% { transform: scale(1.1); }
   }
 
-  /* 점수/단계 */
+  /* 구분선 */
+  .sidebar-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(255,75,43,0.1);
+  }
+
+  /* HUD — 사이드바 안 */
   #hud {
     display: flex;
-    gap: 24px;
-    align-items: center;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
   }
 
   .hud-item {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 2px;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(255,75,43,0.08);
   }
 
   .hud-label {
@@ -152,10 +175,52 @@
     color: var(--ivory);
   }
 
-  /* ── 게임 캔버스 영역 ── */
+  /* 사이드바 하단 — 상태/뱃지 */
+  #sidebar-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  #diff-badge {
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    width: 100%;
+    text-align: center;
+  }
+  #diff-badge.lv1 { background: rgba(76,175,80,0.15); color: #4CAF50; border: 1px solid rgba(76,175,80,0.3); }
+  #diff-badge.lv2 { background: rgba(255,152,0,0.15); color: #FF9800; border: 1px solid rgba(255,152,0,0.3); }
+  #diff-badge.lv3 { background: rgba(255,75,43,0.15); color: #FF4B2B; border: 1px solid rgba(255,75,43,0.3); }
+
+  #status-badge {
+    background: rgba(26,26,26,0.85);
+    border: 1px solid rgba(255,75,43,0.2);
+    border-radius: 10px;
+    padding: 7px 12px;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    width: 100%;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  #status-badge.ready {
+    color: #4CAF50;
+    border-color: rgba(76,175,80,0.3);
+  }
+
+  /* ── 게임 캔버스 영역 (풀스크린) ── */
   #game-wrap {
     position: relative;
     flex: 1;
+    height: 100vh;
     overflow: hidden;
   }
 
@@ -175,33 +240,12 @@
     height: 100%;
   }
 
-  /* ── 오버레이 UI ── */
-  #status-badge {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(26,26,26,0.85);
-    border: 1px solid rgba(255,75,43,0.3);
-    border-radius: 12px;
-    padding: 8px 16px;
-    font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 1px;
-    z-index: 30;
-    transition: all 0.3s;
-  }
-
-  #status-badge.ready {
-    color: #4CAF50;
-    border-color: rgba(76,175,80,0.4);
-  }
-
   /* ── 시작 화면 ── */
   #start-screen {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(17,17,17,0.97);
-    z-index: 50;
+    z-index: 100;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -368,31 +412,34 @@
 
   /* ── 주먹 감지 인디케이터 ── */
   #fist-indicator {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    z-index: 30;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(255,75,43,0.08);
   }
 
   .fist-ring {
-    width: 52px;
-    height: 52px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     border: 2px solid rgba(255,75,43,0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 18px;
     transition: all 0.2s;
+    flex-shrink: 0;
   }
 
   .fist-ring.active {
     border-color: var(--accent);
-    box-shadow: 0 0 20px rgba(255,75,43,0.6);
+    box-shadow: 0 0 16px rgba(255,75,43,0.6);
     background: rgba(255,75,43,0.1);
   }
 
@@ -406,13 +453,19 @@
 </head>
 <body>
 
-<!-- 상단 카드 -->
-<div id="top-bar">
-  <div class="game-label">✦ 한글 버블 게임 ✦</div>
+<!-- 왼쪽 사이드바 -->
+<div id="sidebar">
+  <div class="game-label">✦ 한글 버블 ✦</div>
+
+  <!-- 단어 카드 -->
   <div id="word-card">
     <div id="target-word">로딩중</div>
     <div id="collect-track"></div>
   </div>
+
+  <div class="sidebar-divider"></div>
+
+  <!-- HUD -->
   <div id="hud">
     <div class="hud-item">
       <div class="hud-label">Score</div>
@@ -427,24 +480,25 @@
       <div class="hud-val" id="timer-val">60</div>
     </div>
   </div>
+
+  <!-- 사이드바 하단 -->
+  <div id="sidebar-bottom">
+    <!-- 주먹 인디케이터 -->
+    <div id="fist-indicator">
+      <div class="fist-ring" id="fist-ring">✊</div>
+      <div class="fist-label">주먹 쥐기</div>
+    </div>
+    <!-- 난이도 뱃지 -->
+    <div id="diff-badge" class="lv1">EASY</div>
+    <!-- 상태 뱃지 -->
+    <div id="status-badge">📷 카메라 연결 중...</div>
+  </div>
 </div>
 
-<!-- 게임 영역 -->
+<!-- 게임 영역 (풀스크린) -->
 <div id="game-wrap">
   <video id="webcam" playsinline autoplay muted></video>
   <canvas id="game-canvas"></canvas>
-
-  <!-- 주먹 인디케이터 -->
-  <div id="fist-indicator">
-    <div class="fist-ring" id="fist-ring">✊</div>
-    <div class="fist-label">Fist</div>
-  </div>
-
-  <!-- 상태 뱃지 -->
-  <div id="status-badge">📷 카메라 연결 중...</div>
-
-  <!-- 난이도 뱃지 -->
-  <div id="diff-badge" class="lv1">EASY</div>
 
   <!-- 완성 오버레이 -->
   <div id="complete-overlay">
