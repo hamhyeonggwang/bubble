@@ -383,6 +383,19 @@
   .diff-btn .diff-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; }
   .diff-btn .diff-desc { font-size: 10px; color: #666; margin-top: 4px; line-height: 1.4; }
   .diff-btn.active .diff-desc { color: #aaa; }
+
+  /* 제작자 크레딧 */
+  .credit {
+    font-size: 11px;
+    color: #444;
+    letter-spacing: 0.5px;
+    text-align: center;
+    margin-top: -12px;
+  }
+  .credit strong {
+    color: var(--accent);
+    font-weight: 700;
+  }
   #diff-badge {
     position: absolute; top: 16px; right: 20px; z-index: 30;
     font-size: 10px; letter-spacing: 2px; padding: 4px 12px;
@@ -582,6 +595,10 @@
   </div>
 
   <button class="start-btn" id="start-btn">START GAME</button>
+
+  <div class="credit">
+    Created by <strong>Ham.Dev</strong> — Occupational Therapist &amp; Developer
+  </div>
 </div>
 
 <!-- MediaPipe -->
