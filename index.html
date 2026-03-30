@@ -287,6 +287,40 @@
     box-shadow: 0 8px 36px rgba(255,75,43,0.6);
   }
 
+  .difficulty-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #555;
+    text-transform: uppercase;
+    margin-bottom: -16px;
+  }
+  .difficulty-btns { display: flex; gap: 12px; }
+  .diff-btn {
+    background: var(--mat-black);
+    border: 2px solid rgba(255,75,43,0.2);
+    border-radius: 16px;
+    padding: 14px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 110px;
+    color: #888;
+  }
+  .diff-btn:hover { border-color: rgba(255,75,43,0.5); color: var(--ivory); transform: translateY(-2px); }
+  .diff-btn.active { border-color: var(--accent); background: rgba(255,75,43,0.12); color: var(--ivory); box-shadow: 0 0 18px rgba(255,75,43,0.3); }
+  .diff-btn .diff-icon { font-size: 24px; margin-bottom: 6px; }
+  .diff-btn .diff-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+  .diff-btn .diff-desc { font-size: 10px; color: #666; margin-top: 4px; line-height: 1.4; }
+  .diff-btn.active .diff-desc { color: #aaa; }
+  #diff-badge {
+    position: absolute; top: 16px; right: 20px; z-index: 30;
+    font-size: 10px; letter-spacing: 2px; padding: 4px 12px;
+    border-radius: 20px; font-weight: 700; text-transform: uppercase;
+  }
+  #diff-badge.lv1 { background: rgba(76,175,80,0.2); color: #4CAF50; border: 1px solid rgba(76,175,80,0.3); }
+  #diff-badge.lv2 { background: rgba(255,152,0,0.2); color: #FF9800; border: 1px solid rgba(255,152,0,0.3); }
+  #diff-badge.lv3 { background: rgba(255,75,43,0.2); color: #FF4B2B; border: 1px solid rgba(255,75,43,0.3); }
+
   /* ── 완성 축하 ── */
   #complete-overlay {
     position: absolute;
@@ -409,6 +443,9 @@
   <!-- 상태 뱃지 -->
   <div id="status-badge">📷 카메라 연결 중...</div>
 
+  <!-- 난이도 뱃지 -->
+  <div id="diff-badge" class="lv1">EASY</div>
+
   <!-- 완성 오버레이 -->
   <div id="complete-overlay">
     <div class="complete-word" id="complete-word-display"></div>
@@ -438,6 +475,27 @@
       <div class="guide-text"><strong>글로우 버스트</strong>빛이 터지며<br>자모 수집!</div>
     </div>
   </div>
+
+  <!-- 난이도 선택 -->
+  <div class="difficulty-label">난이도 선택</div>
+  <div class="difficulty-btns">
+    <div class="diff-btn active" data-level="1">
+      <div class="diff-icon">🌱</div>
+      <div class="diff-name">EASY</div>
+      <div class="diff-desc">버블 고정<br>자모만 등장</div>
+    </div>
+    <div class="diff-btn" data-level="2">
+      <div class="diff-icon">🌊</div>
+      <div class="diff-name">NORMAL</div>
+      <div class="diff-desc">버블 위아래<br>이동</div>
+    </div>
+    <div class="diff-btn" data-level="3">
+      <div class="diff-icon">🔥</div>
+      <div class="diff-name">HARD</div>
+      <div class="diff-desc">이동 + 방해<br>자음 추가</div>
+    </div>
+  </div>
+
   <button class="start-btn" id="start-btn">START GAME</button>
 </div>
 
@@ -471,6 +529,7 @@ const VOWELS    = ['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ','
 // ══════════════════════════════
 let gameState = {
   running: false,
+  difficulty: 1,       // 1:easy 2:normal 3:hard
   stage: 1,
   score: 0,
   timer: 60,
@@ -503,25 +562,40 @@ window.addEventListener('resize', () => { resizeCanvas(); respawnBubbles(); });
 //  버블 클래스
 // ══════════════════════════════
 class Bubble {
-  constructor(char, x, y) {
+  constructor(char, x, y, isDecoy = false) {
     this.char = char;
     this.isVowel = VOWELS.includes(char);
+    this.isDecoy = isDecoy;           // 3단계 방해 버블
     this.x = x;
     this.y = y;
+    this.baseY = y;                   // sin 이동 기준 Y
+    this.movePhase = Math.random() * Math.PI * 2;
+    this.moveSpeed = 0.012 + Math.random() * 0.01;  // sin 속도
+    this.moveAmp = 30 + Math.random() * 20;          // 진폭 px
     this.r = 38 + Math.random() * 14;
     this.pulsePhase = Math.random() * Math.PI * 2;
     this.pulseSpeed = 0.04 + Math.random() * 0.03;
     this.glowAnim = 0;
     this.alive = true;
     this.collected = false;
-    // 색상
-    this.baseColor = this.isVowel ? '#FFD060' : '#FF4B2B';
-    this.glowColor = this.isVowel ? 'rgba(255,208,96,' : 'rgba(255,75,43,';
+    // 색상: 방해 버블은 회색빛
+    if (isDecoy) {
+      this.baseColor = '#7A7A9D';
+      this.glowColor = 'rgba(120,120,160,';
+    } else {
+      this.baseColor = this.isVowel ? '#FFD060' : '#FF4B2B';
+      this.glowColor = this.isVowel ? 'rgba(255,208,96,' : 'rgba(255,75,43,';
+    }
   }
 
-  update() {
+  update(difficulty) {
     this.pulsePhase += this.pulseSpeed;
     if (this.glowAnim > 0) this.glowAnim -= 0.06;
+    // 2, 3단계: sin 상하 이동
+    if (difficulty >= 2) {
+      this.movePhase += this.moveSpeed;
+      this.y = this.baseY + Math.sin(this.movePhase) * this.moveAmp;
+    }
   }
 
   draw(ctx) {
@@ -546,9 +620,19 @@ class Bubble {
 
     // 버블 본체
     const grad = ctx.createRadialGradient(-scaleR * 0.3, -scaleR * 0.3, 2, 0, 0, scaleR);
-    grad.addColorStop(0, this.isVowel ? 'rgba(255,240,180,0.95)' : 'rgba(255,140,80,0.95)');
-    grad.addColorStop(0.6, this.isVowel ? 'rgba(255,208,60,0.8)' : 'rgba(255,75,43,0.8)');
-    grad.addColorStop(1, this.isVowel ? 'rgba(200,140,0,0.4)' : 'rgba(180,30,0,0.4)');
+    if (this.isDecoy) {
+      grad.addColorStop(0, 'rgba(160,160,200,0.9)');
+      grad.addColorStop(0.6, 'rgba(100,100,150,0.75)');
+      grad.addColorStop(1, 'rgba(60,60,100,0.3)');
+    } else if (this.isVowel) {
+      grad.addColorStop(0, 'rgba(255,240,180,0.95)');
+      grad.addColorStop(0.6, 'rgba(255,208,60,0.8)');
+      grad.addColorStop(1, 'rgba(200,140,0,0.4)');
+    } else {
+      grad.addColorStop(0, 'rgba(255,140,80,0.95)');
+      grad.addColorStop(0.6, 'rgba(255,75,43,0.8)');
+      grad.addColorStop(1, 'rgba(180,30,0,0.4)');
+    }
 
     ctx.beginPath();
     ctx.arc(0, 0, scaleR, 0, Math.PI * 2);
@@ -576,13 +660,13 @@ class Bubble {
     ctx.textBaseline = 'middle';
     ctx.lineJoin = 'round';
     // 외곽선으로 속빈 글자 보완
-    ctx.strokeStyle = this.isVowel ? 'rgba(100,60,0,0.8)' : 'rgba(255,255,255,0.6)';
+    ctx.strokeStyle = this.isDecoy ? 'rgba(180,180,220,0.6)' : (this.isVowel ? 'rgba(100,60,0,0.8)' : 'rgba(255,255,255,0.6)');
     ctx.lineWidth = fontSize * 0.09;
-    ctx.shadowColor = this.isVowel ? 'rgba(255,160,0,0.7)' : 'rgba(255,80,30,0.7)';
+    ctx.shadowColor = this.isDecoy ? 'rgba(120,120,180,0.5)' : (this.isVowel ? 'rgba(255,160,0,0.7)' : 'rgba(255,80,30,0.7)');
     ctx.shadowBlur = 8;
     ctx.strokeText(this.char, 0, 1);
     // 채우기
-    ctx.fillStyle = this.isVowel ? '#1a1a1a' : '#ffffff';
+    ctx.fillStyle = this.isDecoy ? 'rgba(200,200,230,0.95)' : (this.isVowel ? '#1a1a1a' : '#ffffff');
     ctx.shadowBlur = 0;
     ctx.fillText(this.char, 0, 1);
 
@@ -703,15 +787,27 @@ function updateWordCard() {
 
 function respawnBubbles() {
   const W = canvas.width, H = canvas.height;
-  // 목표 자모를 개수만큼 그대로 사용 (디코이 없음)
+  const diff = gameState.difficulty;
   const jamoList = [...gameState.currentWord.jamo].sort(() => Math.random() - 0.5);
-  const count = jamoList.length;
 
-  // 그리드 기반 균등 배치 (겹침 방지)
+  // 3단계: 방해 자음 2~3개 추가 (목표에 없는 자음)
+  let allChars = jamoList.map(c => ({ char: c, isDecoy: false }));
+  if (diff === 3) {
+    const targetSet = new Set(jamoList);
+    const decoys = CONSONANTS
+      .filter(c => !targetSet.has(c))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+      .map(c => ({ char: c, isDecoy: true }));
+    allChars = [...allChars, ...decoys].sort(() => Math.random() - 0.5);
+  }
+
+  const count = allChars.length;
   const cols = Math.ceil(Math.sqrt(count * 1.6));
   const rows = Math.ceil(count / cols);
   const marginX = W * 0.12;
-  const marginY = H * 0.10;
+  // 2,3단계는 sin 진폭 여유 확보
+  const marginY = diff >= 2 ? H * 0.18 : H * 0.10;
   const cellW = (W - marginX * 2) / cols;
   const cellH = (H - marginY * 2) / rows;
 
@@ -719,20 +815,22 @@ function respawnBubbles() {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (positions.length >= count) break;
-      // 셀 중심에서 ±20% 랜덤 오프셋
-      const jitter = 0.2;
+      const jitter = 0.18;
       const x = marginX + cellW * (c + 0.5) + (Math.random() - 0.5) * cellW * jitter;
       const y = marginY + cellH * (r + 0.5) + (Math.random() - 0.5) * cellH * jitter;
       positions.push({ x, y });
     }
   }
-  // 위치 셔플
   positions.sort(() => Math.random() - 0.5);
 
-  gameState.bubbles = jamoList.map((char, i) => {
-    const b = new Bubble(char, positions[i].x, positions[i].y);
-    // 유아용: 버블 크기를 화면 기준으로 키움
+  gameState.bubbles = allChars.map(({ char, isDecoy }, i) => {
+    const b = new Bubble(char, positions[i].x, positions[i].y, isDecoy);
     b.r = Math.min(W, H) * 0.085;
+    // 2,3단계: 버블마다 sin 위상 다르게
+    if (diff >= 2) {
+      b.movePhase = Math.random() * Math.PI * 2;
+      b.moveAmp = 28 + Math.random() * 18;
+    }
     return b;
   });
 }
@@ -814,15 +912,11 @@ function handleFist(landmarks) {
     const dist = Math.hypot(bubble.x - hx, bubble.y - hy);
     if (dist < bubble.r + 40) {
       bubble.alive = false;
-      // 글로우 버스트 이펙트
-      const color = bubble.isVowel ? 'rgba(255,208,96,' : 'rgba(255,75,43,';
+      const color = bubble.isDecoy ? 'rgba(120,120,180,' : (bubble.isVowel ? 'rgba(255,208,96,' : 'rgba(255,75,43,');
       gameState.glowBursts.push(new GlowBurst(bubble.x, bubble.y, color + '1)'));
-
-      // 목표 자모면 수집
-      const isTarget = collectJamo(bubble.char);
-
-      // 디코이는 점수 감점 없이 그냥 터뜨림
-      gameState.fistCooldown = 18; // 0.3초 쿨다운
+      // 방해버블은 수집 안 됨
+      if (!bubble.isDecoy) collectJamo(bubble.char);
+      gameState.fistCooldown = 18;
     }
   });
 }
@@ -909,7 +1003,7 @@ function gameLoop() {
   ctx.restore();
 
   // 버블 업데이트 & 그리기
-  gameState.bubbles.forEach(b => { if (b.alive) { b.update(); b.draw(ctx); } });
+  gameState.bubbles.forEach(b => { if (b.alive) { b.update(gameState.difficulty); b.draw(ctx); } });
 
   // 글로우 버스트
   gameState.glowBursts = gameState.glowBursts.filter(g => g.alive);
@@ -1008,7 +1102,25 @@ async function initMediaPipe() {
 // ══════════════════════════════
 //  게임 시작
 // ══════════════════════════════
+// 난이도 버튼 토글
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
 document.getElementById('start-btn').addEventListener('click', () => {
+  const activeBtn = document.querySelector('.diff-btn.active');
+  const level = activeBtn ? parseInt(activeBtn.dataset.level) : 1;
+  gameState.difficulty = level;
+
+  // 난이도 뱃지 업데이트
+  const badge = document.getElementById('diff-badge');
+  const labels = { 1: 'EASY', 2: 'NORMAL', 3: 'HARD' };
+  badge.textContent = labels[level];
+  badge.className = `lv${level}`;
+
   document.getElementById('start-screen').style.display = 'none';
   gameState.running = true;
   gameState.stage = 1;
