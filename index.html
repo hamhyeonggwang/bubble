@@ -683,25 +683,25 @@
 // ══════════════════════════════
 const WORD_LIST = [
   { word: '나비', jamo: ['ㄴ','ㅏ','ㅂ','ㅣ'],
-    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1598815272841-13862c32abce?w=480&q=80', emoji: '🦋' },
   { word: '오리', jamo: ['ㅇ','ㅗ','ㄹ','ㅣ'],
-    img: 'https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1719533252867-4d9e5b7c1df7?w=480&q=80', emoji: '🦆' },
   { word: '기차', jamo: ['ㄱ','ㅣ','ㅊ','ㅏ'],
-    img: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=480&q=80', emoji: '🚂' },
   { word: '바나나', jamo: ['ㅂ','ㅏ','ㄴ','ㅏ','ㄴ','ㅏ'],
-    img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=480&q=80', emoji: '🍌' },
   { word: '고양이', jamo: ['ㄱ','ㅗ','ㅇ','ㅑ','ㅇ','ㅣ'],
-    img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=480&q=80', emoji: '🐱' },
   { word: '토끼', jamo: ['ㅌ','ㅗ','ㄲ','ㅣ'],
-    img: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=480&q=80', emoji: '🐰' },
   { word: '사자', jamo: ['ㅅ','ㅏ','ㅈ','ㅏ'],
-    img: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=480&q=80', emoji: '🦁' },
   { word: '우유', jamo: ['ㅇ','ㅜ','ㅇ','ㅠ'],
-    img: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=480&q=80', emoji: '🥛' },
   { word: '아기', jamo: ['ㅇ','ㅏ','ㄱ','ㅣ'],
-    img: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=480&q=80', emoji: '👶' },
   { word: '포도', jamo: ['ㅍ','ㅗ','ㄷ','ㅗ'],
-    img: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=480&q=80' },
+    img: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=480&q=80', emoji: '🍇' },
 ];
 
 const CONSONANTS = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ','ㄲ','ㄸ','ㅃ','ㅆ','ㅉ'];
@@ -1131,7 +1131,27 @@ function onWordComplete() {
   const label  = document.getElementById('img-popup-label');
 
   // 이미지 & 단어 세팅
+  img.style.display = 'block';
   img.src = word.img || '';
+  img.alt = word.word;
+  img.onerror = () => {
+    // 이미지 로드 실패 시 이모지로 대체
+    img.style.display = 'none';
+    let emojiEl = document.getElementById('img-popup-emoji');
+    if (!emojiEl) {
+      emojiEl = document.createElement('div');
+      emojiEl.id = 'img-popup-emoji';
+      emojiEl.style.cssText = 'font-size:120px;line-height:1;';
+      img.parentNode.insertBefore(emojiEl, img);
+    }
+    emojiEl.textContent = word.emoji || '🎉';
+    emojiEl.style.display = 'block';
+  };
+  img.onload = () => {
+    const emojiEl = document.getElementById('img-popup-emoji');
+    if (emojiEl) emojiEl.style.display = 'none';
+    img.style.display = 'block';
+  };
   label.textContent = word.word;
 
   // 팡 등장
