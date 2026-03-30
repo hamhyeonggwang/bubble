@@ -199,6 +199,33 @@
   #diff-badge.lv2 { background: rgba(255,152,0,0.15); color: #FF9800; border: 1px solid rgba(255,152,0,0.3); }
   #diff-badge.lv3 { background: rgba(255,75,43,0.15); color: #FF4B2B; border: 1px solid rgba(255,75,43,0.3); }
 
+  /* 홈으로 버튼 */
+  #home-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,75,43,0.15);
+    border-radius: 12px;
+    color: #666;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  #home-btn:hover {
+    background: rgba(255,75,43,0.1);
+    border-color: rgba(255,75,43,0.4);
+    color: var(--ivory);
+  }
+  #home-btn .home-icon { font-size: 14px; }
+
   #status-badge {
     background: rgba(26,26,26,0.85);
     border: 1px solid rgba(255,75,43,0.2);
@@ -492,6 +519,10 @@
     <div id="diff-badge" class="lv1">EASY</div>
     <!-- 상태 뱃지 -->
     <div id="status-badge">📷 카메라 연결 중...</div>
+    <!-- 홈으로 -->
+    <button id="home-btn">
+      <span class="home-icon">🏠</span> 홈으로
+    </button>
   </div>
 </div>
 
@@ -1243,6 +1274,32 @@ async function initMediaPipe() {
 // ══════════════════════════════
 //  게임 시작
 // ══════════════════════════════
+// 홈으로 버튼
+document.getElementById('home-btn').addEventListener('click', () => {
+  // 게임 정지
+  gameState.running = false;
+  clearInterval(timerInterval);
+
+  // 웹캠 스트림 정지
+  const video = document.getElementById('webcam');
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+  }
+
+  // 상태 초기화
+  gameState.bubbles = [];
+  gameState.glowBursts = [];
+  gameState.handLandmarks = null;
+  gameState.isFist = false;
+
+  // 시작 화면 복귀
+  document.getElementById('start-screen').style.display = 'flex';
+  document.getElementById('status-badge').textContent = '📷 카메라 연결 중...';
+  document.getElementById('status-badge').className = '';
+  document.getElementById('fist-ring').classList.remove('active');
+});
+
 // 난이도 버튼 토글
 document.querySelectorAll('.diff-btn').forEach(btn => {
   btn.addEventListener('click', () => {
