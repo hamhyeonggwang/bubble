@@ -681,7 +681,8 @@
 // ══════════════════════════════
 //  데이터: 단어 목록 (자모 분리)
 // ══════════════════════════════
-const WORD_LIST = [
+// 난이도 1 단어 (10개 — 받침 없는 쉬운 단어)
+const WORD_LIST_LV1 = [
   { word: '나비', jamo: ['ㄴ','ㅏ','ㅂ','ㅣ'],
     img: 'https://images.unsplash.com/photo-1598815272841-13862c32abce?w=480&q=80', emoji: '🦋' },
   { word: '오리', jamo: ['ㅇ','ㅗ','ㄹ','ㅣ'],
@@ -703,6 +704,33 @@ const WORD_LIST = [
   { word: '포도', jamo: ['ㅍ','ㅗ','ㄷ','ㅗ'],
     img: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=480&q=80', emoji: '🍇' },
 ];
+
+// 난이도 2,3 단어 (10개 — 받침 포함, 조금 어려운 단어)
+const WORD_LIST_LV2 = [
+  { word: '코끼리', jamo: ['ㅋ','ㅗ','ㄲ','ㅣ','ㄹ','ㅣ'],
+    img: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=480&q=80', emoji: '🐘' },
+  { word: '펭귄', jamo: ['ㅍ','ㅔ','ㅇ','ㄱ','ㅱ','ㄴ'],
+    img: 'https://images.unsplash.com/photo-1551986782-d0169b3f8fa7?w=480&q=80', emoji: '🐧' },
+  { word: '비행기', jamo: ['ㅂ','ㅣ','ㅎ','ㅐ','ㅇ','ㄱ','ㅣ'],
+    img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=480&q=80', emoji: '✈️' },
+  { word: '딸기', jamo: ['ㄷ','ㄷ','ㅏ','ㄹ','ㄱ','ㅣ'],
+    img: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=480&q=80', emoji: '🍓' },
+  { word: '사과', jamo: ['ㅅ','ㅏ','ㄱ','ㅘ'],
+    img: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=480&q=80', emoji: '🍎' },
+  { word: '수박', jamo: ['ㅅ','ㅜ','ㅂ','ㅏ','ㄱ'],
+    img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=480&q=80', emoji: '🍉' },
+  { word: '하마', jamo: ['ㅎ','ㅏ','ㅁ','ㅏ'],
+    img: 'https://images.unsplash.com/photo-1549480017-d76466a4b7e8?w=480&q=80', emoji: '🦛' },
+  { word: '강아지', jamo: ['ㄱ','ㅏ','ㅇ','ㅇ','ㅏ','ㅈ','ㅣ'],
+    img: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=480&q=80', emoji: '🐶' },
+  { word: '자동차', jamo: ['ㅈ','ㅏ','ㄷ','ㅗ','ㅇ','ㅊ','ㅏ'],
+    img: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=480&q=80', emoji: '🚗' },
+  { word: '피아노', jamo: ['ㅍ','ㅣ','ㅇ','ㅏ','ㄴ','ㅗ'],
+    img: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=480&q=80', emoji: '🎹' },
+];
+
+// 현재 사용 중인 단어 목록 (난이도에 따라 동적 변경)
+let WORD_LIST = [...WORD_LIST_LV1];
 
 const CONSONANTS = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ','ㄲ','ㄸ','ㅃ','ㅆ','ㅉ'];
 const VOWELS    = ['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ','ㅐ','ㅔ','ㅘ','ㅚ','ㅝ','ㅟ','ㅢ'];
@@ -793,10 +821,12 @@ function playSoundComplete() {
 
 let gameState = {
   running: false,
-  difficulty: 1,       // 1:easy 2:normal 3:hard
+  difficulty: 1,
   stage: 1,
   score: 0,
   timer: 60,
+  wordIndex: 0,        // 현재 단어 인덱스 (0~9)
+  clearedWords: 0,     // 이번 난이도에서 클리어한 단어 수
   currentWord: null,
   collectedJamo: [],
   bubbles: [],
@@ -1027,8 +1057,7 @@ class GlowBurst {
 //  게임 로직
 // ══════════════════════════════
 function loadWord() {
-  const idx = (gameState.stage - 1) % WORD_LIST.length;
-  gameState.currentWord = WORD_LIST[idx];
+  gameState.currentWord = WORD_LIST[gameState.wordIndex];
   gameState.collectedJamo = new Array(gameState.currentWord.jamo.length).fill(false);
   updateWordCard();
   respawnBubbles();
@@ -1130,12 +1159,10 @@ function onWordComplete() {
   const img    = document.getElementById('img-popup-img');
   const label  = document.getElementById('img-popup-label');
 
-  // 이미지 & 단어 세팅
   img.style.display = 'block';
   img.src = word.img || '';
   img.alt = word.word;
   img.onerror = () => {
-    // 이미지 로드 실패 시 이모지로 대체
     img.style.display = 'none';
     let emojiEl = document.getElementById('img-popup-emoji');
     if (!emojiEl) {
@@ -1154,27 +1181,95 @@ function onWordComplete() {
   };
   label.textContent = word.word;
 
-  // 팡 등장
   document.getElementById('word-card').classList.add('complete');
   dim.classList.add('show');
   popup.classList.add('show');
   inner.classList.remove('hide');
 
   gameState.score += 50;
+  gameState.clearedWords++;
   document.getElementById('score-val').textContent = gameState.score;
 
-  // 2.2초 후 사라지며 다음 단어
   setTimeout(() => {
     inner.classList.add('hide');
     setTimeout(() => {
       popup.classList.remove('show');
       dim.classList.remove('show');
       document.getElementById('word-card').classList.remove('complete');
-      gameState.stage++;
-      document.getElementById('stage-val').textContent = gameState.stage;
-      loadWord();
+
+      // 10단어 모두 클리어 — 다음 난이도로
+      if (gameState.clearedWords >= 10) {
+        onAllWordsCleared();
+      } else {
+        gameState.wordIndex++;
+        gameState.stage++;
+        document.getElementById('stage-val').textContent = gameState.stage;
+        loadWord();
+      }
     }, 420);
   }, 2200);
+}
+
+// ── 10단어 전체 클리어 처리
+function onAllWordsCleared() {
+  const nextDiff = gameState.difficulty + 1;
+
+  if (nextDiff > 3) {
+    // 모든 난이도 완료 — 시작 화면으로
+    showLevelUpScreen('🏆', '모든 단계 완료!', '대단해요! 처음으로 돌아갈게요.', () => {
+      document.getElementById('start-screen').style.display = 'flex';
+    });
+    return;
+  }
+
+  const labels = { 2: 'NORMAL', 3: 'HARD' };
+  const icons  = { 2: '🌊', 3: '🔥' };
+  showLevelUpScreen(icons[nextDiff], `${labels[nextDiff]} 레벨!`, '다음 난이도로 올라갑니다!', () => {
+    // 난이도 전환
+    gameState.difficulty = nextDiff;
+    gameState.clearedWords = 0;
+    gameState.wordIndex = 0;
+    gameState.stage = 1;
+    gameState.timer = 60;
+    WORD_LIST = [...WORD_LIST_LV2];  // 2,3단계는 LV2 단어 사용
+
+    const badge = document.getElementById('diff-badge');
+    badge.textContent = labels[nextDiff];
+    badge.className = `lv${nextDiff}`;
+    document.getElementById('stage-val').textContent = '1';
+    document.getElementById('timer-val').textContent = '60';
+    loadWord();
+  });
+}
+
+// ── 레벨업 연출 오버레이
+function showLevelUpScreen(icon, title, msg, callback) {
+  // 기존 오버레이 재활용 또는 동적 생성
+  let el = document.getElementById('levelup-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'levelup-overlay';
+    el.style.cssText = `
+      position:fixed; inset:0; z-index:90;
+      background:rgba(17,17,17,0.92);
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      gap:20px; animation: fadeIn 0.4s ease;
+    `;
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `
+    <div style="font-size:80px;animation:imgPop 0.5s cubic-bezier(0.34,1.56,0.64,1)">${icon}</div>
+    <div style="font-size:36px;font-weight:900;letter-spacing:4px;
+      background:linear-gradient(135deg,#FF4B2B,#FFD700);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;">${title}</div>
+    <div style="font-size:15px;color:#aaa;letter-spacing:1px;">${msg}</div>
+  `;
+  el.style.display = 'flex';
+  setTimeout(() => {
+    el.style.display = 'none';
+    callback();
+  }, 2500);
 }
 
 // ══════════════════════════════
@@ -1415,6 +1510,8 @@ async function initMediaPipe() {
 document.getElementById('home-btn').addEventListener('click', () => {
   // 게임 정지
   gameState.running = false;
+  gameState.wordIndex = 0;
+  gameState.clearedWords = 0;
   clearInterval(timerInterval);
 
   // 웹캠 스트림 정지
@@ -1464,6 +1561,9 @@ document.getElementById('start-btn').addEventListener('click', () => {
   gameState.stage = 1;
   gameState.score = 0;
   gameState.timer = 60;
+  gameState.wordIndex = 0;
+  gameState.clearedWords = 0;
+  WORD_LIST = level === 1 ? [...WORD_LIST_LV1] : [...WORD_LIST_LV2];
   document.getElementById('score-val').textContent = '0';
   document.getElementById('stage-val').textContent = '1';
   document.getElementById('timer-val').textContent = '60';
