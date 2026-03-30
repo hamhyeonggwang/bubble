@@ -525,8 +525,89 @@ const CONSONANTS = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ',
 const VOWELS    = ['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ','ㅐ','ㅔ','ㅘ','ㅚ','ㅝ','ㅟ','ㅢ'];
 
 // ══════════════════════════════
-//  게임 상태
+//  효과음 (Web Audio API)
 // ══════════════════════════════
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// 목표 자모 터뜨리기 — 밝고 통통 튀는 팝 사운드
+function playSoundPop(isVowel) {
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+
+  filter.type = 'bandpass';
+  filter.frequency.value = isVowel ? 1200 : 900;
+  filter.Q.value = 2;
+
+  // 모음: 높고 맑은 팝 / 자음: 낮고 통통한 팝
+  osc.type = isVowel ? 'sine' : 'triangle';
+  const baseFreq = isVowel ? 880 : 660;
+  osc.frequency.setValueAtTime(baseFreq * 1.4, now);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, now + 0.12);
+
+  gain.gain.setValueAtTime(0.0, now);
+  gain.gain.linearRampToValueAtTime(0.4, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+  osc.start(now);
+  osc.stop(now + 0.2);
+}
+
+// 방해 버블 터뜨리기 — 낮고 둔탁한 사운드
+function playSoundDecoy() {
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(180, now);
+  osc.frequency.exponentialRampToValueAtTime(60, now + 0.15);
+
+  gain.gain.setValueAtTime(0.25, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+  osc.start(now);
+  osc.stop(now + 0.2);
+}
+
+// 단어 완성 — 밝고 경쾌한 팡파레
+function playSoundComplete() {
+  const ctx = getAudioCtx();
+  const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
+  notes.forEach((freq, i) => {
+    const now = ctx.currentTime + i * 0.1;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(0.0, now);
+    gain.gain.linearRampToValueAtTime(0.35, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    osc.start(now);
+    osc.stop(now + 0.32);
+  });
+}
+
+
 let gameState = {
   running: false,
   difficulty: 1,       // 1:easy 2:normal 3:hard
@@ -857,6 +938,7 @@ function collectJamo(char) {
 }
 
 function onWordComplete() {
+  playSoundComplete();
   const overlay = document.getElementById('complete-overlay');
   document.getElementById('complete-word-display').textContent = gameState.currentWord.word;
   document.getElementById('word-card').classList.add('complete');
@@ -915,7 +997,12 @@ function handleFist(landmarks) {
       const color = bubble.isDecoy ? 'rgba(120,120,180,' : (bubble.isVowel ? 'rgba(255,208,96,' : 'rgba(255,75,43,');
       gameState.glowBursts.push(new GlowBurst(bubble.x, bubble.y, color + '1)'));
       // 방해버블은 수집 안 됨
-      if (!bubble.isDecoy) collectJamo(bubble.char);
+      if (!bubble.isDecoy) {
+        playSoundPop(bubble.isVowel);
+        collectJamo(bubble.char);
+      } else {
+        playSoundDecoy();
+      }
       gameState.fistCooldown = 18;
     }
   });
@@ -1120,6 +1207,9 @@ document.getElementById('start-btn').addEventListener('click', () => {
   const labels = { 1: 'EASY', 2: 'NORMAL', 3: 'HARD' };
   badge.textContent = labels[level];
   badge.className = `lv${level}`;
+
+  // AudioContext 미리 초기화 (브라우저 정책: 사용자 인터랙션 후 활성화)
+  getAudioCtx();
 
   document.getElementById('start-screen').style.display = 'none';
   gameState.running = true;
